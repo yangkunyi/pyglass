@@ -1,0 +1,17 @@
+[project]
+authors = ["yangkunyi <yangkunyi@sjtu.edu.cn>"]
+channels = ["conda-forge"]
+description = "Add a short description here"
+name = "backend"
+platforms = ["win-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+numpy = ">=2.1.2,<3"
+ncempy = ">=1.12,<2"
+flask = ">=3.0.3,<4"
+flask-socketio = ">=5.3.6,<6"
+opencv = ">=4.10.0,<5"
+jupyter = ">=1.1.1,<2"

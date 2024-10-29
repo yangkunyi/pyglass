@@ -8,6 +8,7 @@ import numpy as np
 from DM4Processor import DM4_Processor
 from ImageProcessor import Image_Processor
 from RDFProcessor import RDF_Processor
+from CenterCalibrationProcessor import Cen_Cal_Processor
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="http://localhost:9300")
@@ -126,6 +127,15 @@ def handle_request_polar_img_with_range(data):
     )
 
     image_response(img_color, "rdf_right")
+
+
+@socketio.on("request_center_calibration")
+def handle_request_center_calibration(data):
+    index = int(data["index"])
+    thres = float(data["threshold"])
+    Cen_Cal_Processor.load_img(RDF_Processor.get_image(index))
+    corrected_img = Cen_Cal_Processor.calibrate_center(thres)
+    image_response(corrected_img, "center_calibration")
 
 
 if __name__ == "__main__":
