@@ -133,7 +133,7 @@ def handle_request_polar_img_with_range(data):
 def handle_request_center_calibration(data):
     index = int(data["index"])
     thres = float(data["threshold"])
-    Cen_Cal_Processor.load_img(RDF_Processor.get_image(index))
+    Cen_Cal_Processor.load_img(DM4_Processor.get_image(index))
     corrected_img = Cen_Cal_Processor.calibrate_center(thres)
     image_response(corrected_img, "center_calibration")
 
