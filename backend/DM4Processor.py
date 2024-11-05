@@ -39,13 +39,15 @@ class DM4Processor:
             self.raw_data = self.raw_data.astype(np.float64)
             self.raw_data = normalize(self.raw_data)
 
+        self.mean_img = np.mean(self.raw_data, axis=(0, 1))
+
     def get_img(self, img_index):
         y = img_index // self.x_range
         x = img_index % self.x_range
         return self.raw_data[y, x]
 
     def get_mean_img(self):
-        return np.mean(self.raw_data, axis=(0, 1))
+        return self.mean_img
 
     def get_range(self):
         return self.y_range, self.x_range

@@ -30,6 +30,8 @@ class RDFProcessor:
         polar_image, _ = radial_profile(self.img)
         self.polar_img = polar_image
 
+        print("Image set, polar image calculated")
+
     def get_image(self):
         return self.img
 

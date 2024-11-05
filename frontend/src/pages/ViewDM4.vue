@@ -82,7 +82,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
-import { socket } from "boot/socketio";
+import { socketViewer, socketRDF } from "boot/socketio";
 import { useQuasar } from "quasar";
 import Konva from "konva";
 
@@ -100,6 +100,8 @@ const indexRange = ref(0);
 const stageContainer = ref(null);
 const stage = ref(null);
 const layer = ref(null);
+
+const socket = socketViewer;
 
 const openFile = async () => {
   const filePaths = await window.myAPI.openFileDialog();
@@ -179,6 +181,7 @@ onMounted(() => {
       });
       indexRange.value = data.index_range - 1;
       socket.emit("request_image", imageIndex.value);
+      socketRDF.emit("load_image_rdf", true)
     }
   });
 });

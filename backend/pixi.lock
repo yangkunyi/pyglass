@@ -94,6 +94,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/83/60/d497a310bde3f01cb805196ac61b7ad6dc5dcf8dce66634dc34364b20b4f/lazy_loader-0.4-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/20/ab/ed5ed3688c6ba4f0b8d789da19fd8e30a9cf7fc5852effe311bc5aefe73e/llvmlite-0.43.0-cp311-cp311-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/db/bc/83e112abc66cd466c6b83f99118035867cecd41802f8d044638aa78a106e/locket-1.0.0-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/03/0a/4f6fed21aa246c6b49b561ca55facacc2a44b87d65b8b92362a8e99ba202/loguru-0.7.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/da/b8/3a3bd761922d416f3dc5d00bfbed11f66b1ab89a0c2b6e887240a30b0f6b/MarkupSafe-3.0.2-cp311-cp311-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/8b/ce/15b0bb2fb29b3d46211d8ca740b96b5232499fc49200b58b8d571292c9a6/matplotlib-3.9.2-cp311-cp311-win_amd64.whl
       - pypi: https://files.pythonhosted.org/packages/8f/8e/9ad090d3553c280a8060fbf6e24dc1c0c29704ee7d1c372f0c174aa59285/matplotlib_inline-0.1.7-py3-none-any.whl
@@ -172,6 +173,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/5a/84/44687a29792a70e111c5c477230a72c4b957d88d16141199bf9acb7537a3/websocket_client-1.8.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/cb/ff/107697c9d5ca486c4a97e51be036d521ba08a70747c5e9fa1f4729240854/werkzeug-3.1.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/21/02/88b65cc394961a60c43c70517066b6b679738caf78506a5da7b88ffcb643/widgetsnbextension-4.0.13-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/0a/e6/a7d828fef907843b2a5773ebff47fb79ac0c1c88d60c0ca9530ee941e248/win32_setctime-1.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/78/58/e860788190eba3bcce367f74d29c4675466ce8dddfba85f7827588416f01/wsproto-1.2.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ed/c9/142095e654c2b97133ff71df60979422717b29738b08bc8a1709a5d5e0d0/zarr-2.18.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/80/ab/11a76c1e2126084fde2639514f24e6111b789b0bfa4fc6264a8975c7e1f1/zict-3.0.0-py2.py3-none-any.whl
@@ -398,7 +400,7 @@ packages:
   name: backend
   version: 0.1.0
   path: .
-  sha256: bae35ba2ddd7c0c93a0fe10b00fd053c30fdeeef3a2fd3df8a3b034107e4093c
+  sha256: 129984bf886be8c6efce113b8cd4f9ec742637cb3263aecdad34f2d3aeba63bb
   requires_dist:
   - flask>=3.0.3,<4
   - flask-socketio>=5.4.1,<6
@@ -408,6 +410,7 @@ packages:
   - jupyter>=1.1.1,<2
   - polartransform>=2.0.0,<3
   - ncempy>=1.11.3,<2
+  - loguru>=0.7.2,<0.8
   requires_python: ==3.11
   editable: true
 - kind: pypi
@@ -1639,6 +1642,37 @@ packages:
   url: https://files.pythonhosted.org/packages/db/bc/83e112abc66cd466c6b83f99118035867cecd41802f8d044638aa78a106e/locket-1.0.0-py2.py3-none-any.whl
   sha256: b6c819a722f7b6bd955b80781788e4a66a55628b858d347536b7e81325a3a5e3
   requires_python: '>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*'
+- kind: pypi
+  name: loguru
+  version: 0.7.2
+  url: https://files.pythonhosted.org/packages/03/0a/4f6fed21aa246c6b49b561ca55facacc2a44b87d65b8b92362a8e99ba202/loguru-0.7.2-py3-none-any.whl
+  sha256: 003d71e3d3ed35f0f8984898359d65b79e5b21943f78af86aa5491210429b8eb
+  requires_dist:
+  - aiocontextvars>=0.2.0 ; python_full_version < '3.7'
+  - colorama>=0.3.4 ; sys_platform == 'win32'
+  - win32-setctime>=1.0.0 ; sys_platform == 'win32'
+  - mypy==0.910 ; python_full_version < '3.6' and extra == 'dev'
+  - tox==3.27.1 ; python_full_version < '3.8' and extra == 'dev'
+  - pytest==6.1.2 ; python_full_version < '3.8' and extra == 'dev'
+  - pytest-cov==2.12.1 ; python_full_version < '3.8' and extra == 'dev'
+  - colorama==0.4.5 ; python_full_version < '3.8' and extra == 'dev'
+  - freezegun==1.1.0 ; python_full_version < '3.8' and extra == 'dev'
+  - mypy==0.971 ; python_full_version == '3.6.*' and extra == 'dev'
+  - pytest-mypy-plugins==1.9.3 ; python_full_version >= '3.6' and python_full_version < '3.8' and extra == 'dev'
+  - exceptiongroup==1.1.3 ; python_full_version >= '3.7' and python_full_version < '3.11' and extra == 'dev'
+  - mypy==1.4.1 ; python_full_version == '3.7.*' and extra == 'dev'
+  - pre-commit==3.4.0 ; python_full_version >= '3.8' and extra == 'dev'
+  - tox==4.11.0 ; python_full_version >= '3.8' and extra == 'dev'
+  - pytest==7.4.0 ; python_full_version >= '3.8' and extra == 'dev'
+  - pytest-cov==4.1.0 ; python_full_version >= '3.8' and extra == 'dev'
+  - pytest-mypy-plugins==3.0.0 ; python_full_version >= '3.8' and extra == 'dev'
+  - colorama==0.4.6 ; python_full_version >= '3.8' and extra == 'dev'
+  - freezegun==1.2.2 ; python_full_version >= '3.8' and extra == 'dev'
+  - mypy==1.5.1 ; python_full_version >= '3.8' and extra == 'dev'
+  - sphinx==7.2.5 ; python_full_version >= '3.9' and extra == 'dev'
+  - sphinx-autobuild==2021.3.14 ; python_full_version >= '3.9' and extra == 'dev'
+  - sphinx-rtd-theme==1.3.0 ; python_full_version >= '3.9' and extra == 'dev'
+  requires_python: '>=3.5'
 - kind: pypi
   name: markupsafe
   version: 3.0.2
@@ -2928,6 +2962,15 @@ packages:
   url: https://files.pythonhosted.org/packages/21/02/88b65cc394961a60c43c70517066b6b679738caf78506a5da7b88ffcb643/widgetsnbextension-4.0.13-py3-none-any.whl
   sha256: 74b2692e8500525cc38c2b877236ba51d34541e6385eeed5aec15a70f88a6c71
   requires_python: '>=3.7'
+- kind: pypi
+  name: win32-setctime
+  version: 1.1.0
+  url: https://files.pythonhosted.org/packages/0a/e6/a7d828fef907843b2a5773ebff47fb79ac0c1c88d60c0ca9530ee941e248/win32_setctime-1.1.0-py3-none-any.whl
+  sha256: 231db239e959c2fe7eb1d7dc129f11172354f98361c4fa2d6d2d7e278baa8aad
+  requires_dist:
+  - pytest>=4.6.2 ; extra == 'dev'
+  - black>=19.3b0 ; python_full_version >= '3.6' and extra == 'dev'
+  requires_python: '>=3.5'
 - kind: pypi
   name: wsproto
   version: 1.2.0

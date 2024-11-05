@@ -1,6 +1,6 @@
 [project]
 authors = [{name = "yangkunyi", email = "yangkunyi@sjtu.edu.cn"}]
-dependencies = [ "flask>=3.0.3,<4", "flask-socketio>=5.4.1,<6", "opencv-python>=4.10.0.84,<5", "abtem>=1.0.6,<2", "numpy>=1.26.4,<2", "jupyter>=1.1.1,<2", "polartransform>=2.0.0,<3", "ncempy>=1.11.3,<2"]
+dependencies = [ "flask>=3.0.3,<4", "flask-socketio>=5.4.1,<6", "opencv-python>=4.10.0.84,<5", "abtem>=1.0.6,<2", "numpy>=1.26.4,<2", "jupyter>=1.1.1,<2", "polartransform>=2.0.0,<3", "ncempy>=1.11.3,<2", "loguru>=0.7.2,<0.8"]
 description = "Add a short description here"
 name = "backend"
 requires-python = "== 3.11"

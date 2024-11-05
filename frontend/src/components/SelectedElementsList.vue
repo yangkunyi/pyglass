@@ -54,8 +54,9 @@
 
 <script setup>
 import { ref, watch } from "vue";
-import { socket } from "boot/socketio";
+import { socketRDF } from "boot/socketio";
 
+const socket = socketRDF
 const props = defineProps({
   selectedElements: {
     type: Array,
@@ -96,7 +97,7 @@ const saveElements = () => {
     symbol: element.symbol,
     percentage: element.percentage,
   }));
-  socket.emit("selecte_elements", selectedFields);
+  socket.emit("select_elements", selectedFields);
   console.log("Elements with percentage:", elementsWithPercentage.value);
 };
 
