@@ -398,7 +398,7 @@ packages:
   name: backend
   version: 0.1.0
   path: .
-  sha256: 77421b2809256e475cb0c118be0d828c6a5c5d4ad307269fcac6c3cb11c117d6
+  sha256: bae35ba2ddd7c0c93a0fe10b00fd053c30fdeeef3a2fd3df8a3b034107e4093c
   requires_dist:
   - flask>=3.0.3,<4
   - flask-socketio>=5.4.1,<6
@@ -407,6 +407,7 @@ packages:
   - numpy>=1.26.4,<2
   - jupyter>=1.1.1,<2
   - polartransform>=2.0.0,<3
+  - ncempy>=1.11.3,<2
   requires_python: ==3.11
   editable: true
 - kind: pypi
