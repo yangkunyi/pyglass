@@ -78,11 +78,7 @@ const saveElements = () => {
     symbol: element.symbol,
     percentage: element.percentage,
   }));
-<<<<<<< HEAD
-  socket.emit("selecte_elements", selectedFields);
-=======
   socket.emit("select_elements", selectedFields);
->>>>>>> origin/dev
   console.log("Elements with percentage:", elementsWithPercentage.value);
 };
 

@@ -24,7 +24,7 @@ from CenterCalibrationProcessor import CenCal
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="http://localhost:9300")
 
-def image_response(img: np.ndarray, id=None):
+def image_response(img: np.ndarray, id=None,id2=None):
     ### Convert float image in range 0-1 to uint8 and encode to base64
     img = (img * 255).astype(np.uint8)
     _, buffer = cv2.imencode(".jpg", img)
@@ -32,30 +32,7 @@ def image_response(img: np.ndarray, id=None):
     if id is None:
         emit("image_response", {"image_data": image_base64})
     else:
-        emit("image_response", {"image_data": image_base64, "id": id})
-
-
-# 中心矫正
-@socketio.on("request_center_calibration")
-def handle_request_center_calibration(data):
-    index = int(data["index"])
-    thres = float(data["threshold"])
-    Cen_Cal_Processor.load_img(DM4_Processor.get_img(index))
-    corrected_img = Cen_Cal_Processor.calibrate_center(thres)
-    image_response(corrected_img, "center_calibration")
-
-
-# 获取索引范围
-@socketio.on("get_range")
-def handle_file_name():
-    x_range, y_range = DM4_Processor.get_range()
-    index_range = x_range * y_range
-    print(index_range)
-    emit(
-        "get_range_response",
-        {"success": True, "index_range": index_range},
-    )
-
+        emit("image_response", {"image_data": image_base64, "id": id,"id2": id2})
 
 class ViewerNamespace(Namespace):
     def __init__(self, namespace=None):
@@ -220,14 +197,23 @@ class CenterCalibrationNamespace(Namespace):
         index = int(data["index"])
         thres = float(data["threshold"])
 
-        self.center_cal_processor.load_img(DM4_Processor.get_image(index))
+        self.center_cal_processor.load_img(DM4_Processor.get_img(index))
         corrected_img = self.center_cal_processor.calibrate_center(thres)
         self.image_processer.load_img(corrected_img)
         processed_img = self.image_processer.get_img()
         img_color = cv2.cvtColor(processed_img, cv2.COLOR_GRAY2BGR)
         center = (processed_img.shape[1] // 2, processed_img.shape[0] // 2)
         cv2.circle(img_color, center, 3, (0, 0, 1), -1)
-        image_response(img_color, "center_calibration")
+        image_response(img_color, "center_calibration","after")
+
+    def on_get_range(self):
+        x_range, y_range = DM4_Processor.get_range()
+        index_range = x_range * y_range
+        print(index_range)
+        emit(
+            "get_range_response",
+            {"success": True, "index_range": index_range},
+        )
 
 
 socketio.on_namespace(RDFNamespace("/rdf"))

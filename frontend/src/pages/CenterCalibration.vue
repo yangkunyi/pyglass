@@ -71,8 +71,9 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { useQuasar } from "quasar";
 import Konva from "konva";
-import { socket } from 'boot/socketio'
+import { socketCenCal } from 'boot/socketio'
 
+const socket = socketCenCal;
 // 定义响应式数据
 const selectedFile = ref(null);
 const $q = useQuasar();
@@ -87,7 +88,6 @@ const indexRange = ref(0);
 
 const stageContainer = ref(null);
 const stageContainer2 = ref(null);
-const stage = ref(null);
 const layer1 = ref(null);
 const layer2 = ref(null);
 
@@ -98,7 +98,7 @@ const ajustImage = () => {
     brightness: brightness.value,
   });
   socket.emit("request_image", imageIndex.value);
-  socket.emit("request_center_calibration", {  // 请求校准后的图片
+  socket.emit("request_calibrated_image", {  // 请求校准后的图片
     index: imageIndex.value,
     threshold: 0.5,
   });
@@ -106,7 +106,7 @@ const ajustImage = () => {
 
 const changeImage = () => {
   socket.emit("request_image", imageIndex.value);
-  socket.emit("request_center_calibration", {  // 请求校准后的图片
+  socket.emit("request_calibrated_image", {  // 请求校准后的图片
     index: imageIndex.value,
     threshold: 0.5,
   });
@@ -174,10 +174,8 @@ onMounted(() => {
       console.error(data.error);
       return;
     }
-    if (data.id === "center_calibration") {
+    if (data.id2 === "after") {
       imageCenterData.value = data.image_data;
-      console.log(imageCenterData.value);
-
       drawImage(imageCenterData.value, layer2.value); // 绘制第二张图片
     } else {
       imageData.value = data.image_data;
