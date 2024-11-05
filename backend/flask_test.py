@@ -14,7 +14,9 @@ app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="http://localhost:9300")
 
 
+
 def image_response(img: np.ndarray, id=None):
+    ### Convert float image in range 0-1 to uint8 and encode to base64
     img = (img * 255).astype(np.uint8)
     _, buffer = cv2.imencode(".jpg", img)
     image_base64 = base64.b64encode(buffer).decode("utf-8")

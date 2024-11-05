@@ -1,6 +1,5 @@
 import pickle
 
-import numba
 import numpy as np
 import polarTransform
 from abtem.parametrizations import KirklandParametrization
@@ -27,7 +26,6 @@ def getPath(filename):
     return filename
 
 
-@numba.njit
 def numba_get_center(img, thres=0.7):
     """
     根据阈值计算图像的质心作为中心点。
