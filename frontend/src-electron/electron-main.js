@@ -1,7 +1,6 @@
 import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import path from "path";
 import os from "os";
-import { log } from "console";
 
 // needed in case process is undefined under Linux
 const platform = process.platform || os.platform();

@@ -172,8 +172,10 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
-import { socket } from "boot/socketio";
+import { socketRDF } from "boot/socketio";
 import * as echarts from "echarts";
+
+const socket=socketRDF
 
 // New refs for image adjustments
 const brightness = ref(0);

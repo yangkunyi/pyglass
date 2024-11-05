@@ -2,6 +2,10 @@ import numpy as np
 import cv2
 
 
+def normalize(data):
+    return (data - np.min(data)) / (np.max(data) - np.min(data))
+
+
 def correct_center(img, center_x, center_y):
     height, width = img.shape[:2]  # 获取图像的高度和宽度
     dx = width // 2 - center_x  # 计算水平方向的平移量
@@ -38,7 +42,7 @@ class CenCal:
         pass
 
     def load_img(self, img):
-        self.img = img
+        self.img = normalize(img)
 
     def calibrate_center(self, thres=0.7):
         center_x, center_y = get_center(self.img, thres)

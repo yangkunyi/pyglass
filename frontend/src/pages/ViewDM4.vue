@@ -12,7 +12,12 @@
           <q-item>
             <q-item-section>
               <q-item-label overline>Image Index</q-item-label>
-              <q-slider v-model="imageIndex" :min="0" :max="indexRange" @update:model-value="changeImage" />
+              <q-slider
+                v-model="imageIndex"
+                :min="0"
+                :max="indexRange"
+                @update:model-value="changeImage"
+              />
             </q-item-section>
           </q-item>
 
@@ -20,15 +25,23 @@
           <q-item>
             <q-item-section>
               <q-item-label overline>Gamma</q-item-label>
-              <q-slider v-model="gamma" :min="0.1" :max="2.5" :step="0.05" @update:model-value="ajustImage" />
+              <q-slider
+                :step="0.05"
+                @update:model-value="ajustImage"
+              />
             </q-item-section>
           </q-item>
 
-          <!-- Contrast Slider -->
           <q-item>
             <q-item-section>
               <q-item-label overline>Contrast</q-item-label>
-              <q-slider v-model="contrast" :min="0" :max="5" :step="0.1" @update:model-value="ajustImage" />
+              <q-slider
+                v-model="contrast"
+                :min="0"
+                :max="5"
+                :step="0.1"
+                @update:model-value="ajustImage"
+              />
             </q-item-section>
           </q-item>
 
@@ -36,7 +49,13 @@
           <q-item>
             <q-item-section>
               <q-item-label overline>Brightness</q-item-label>
-              <q-slider v-model="brightness" :min="0" :max="1" :step="0.01" @update:model-value="ajustImage" />
+              <q-slider
+                v-model="brightness"
+                :min="0"
+                :max="1"
+                :step="0.01"
+                @update:model-value="ajustImage"
+              />
             </q-item-section>
           </q-item>
         </q-list>
@@ -59,12 +78,9 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from "vue";
+import { socketViewer, socketRDF } from "boot/socketio";
 import { useQuasar } from "quasar";
 import Konva from "konva";
-import { socket } from 'boot/socketio'
-
-
-
 
 // 定义响应式数据
 const selectedFile = ref(null);
@@ -81,11 +97,13 @@ const stageContainer = ref(null);
 const stage = ref(null);
 const layer = ref(null);
 
+const socket = socketViewer;
 
 const openFile = async () => {
   const filePaths = await window.myAPI.openFileDialog();
   if (filePaths && filePaths.length > 0) {
     selectedFile.value = filePaths[0];
+    console.log(selectedFile.value);
     $q.loading.show();
     socket.emit("upload_dm4", selectedFile.value);
   } else {
@@ -126,15 +144,6 @@ const drawImage = () => {
 };
 
 onMounted(() => {
-  console.log('1111');
-
-  socket.emit("test_event", "Hello from the client!");
-  console.log('111222221');
-  setTimeout(() => {
-    console.log(socket.connected)
-
-  }, 10000)
-
   stage.value = new Konva.Stage({
     container: stageContainer.value,
     width: 512,
@@ -168,6 +177,7 @@ onMounted(() => {
       });
       indexRange.value = data.index_range - 1;
       socket.emit("request_image", imageIndex.value);
+      socketRDF.emit("load_image_rdf", true)
     }
   });
 });

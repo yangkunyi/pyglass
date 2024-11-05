@@ -5,22 +5,13 @@
         <q-scroll-area style="height: 300px">
           <q-list v-if="localSelectedElements.length > 0" bordered separator>
             <q-item-label header>Selected Elements</q-item-label>
-            <q-item
-              v-for="(element, index) in localSelectedElements"
-              :key="element.symbol"
-            >
+            <q-item v-for="(element, index) in localSelectedElements" :key="element.symbol">
               <q-item-section>
                 <q-item-label>{{ element.symbol }}</q-item-label>
               </q-item-section>
               <q-item-section side>
-                <q-input
-                  v-model.number="element.quantity"
-                  type="number"
-                  min="0"
-                  @update:model-value="updateQuantity(index, $event)"
-                  style="width: 100px"
-                  dense
-                />
+                <q-input v-model.number="element.quantity" type="number" min="0"
+                  @update:model-value="updateQuantity(index, $event)" style="width: 100px" dense />
               </q-item-section>
             </q-item>
           </q-list>
@@ -28,25 +19,14 @@
             <p>No elements selected.</p>
           </div>
         </q-scroll-area>
-        <q-btn
-          label="Save"
-          color="primary"
-          @click="saveElements"
-          class="q-mt-md"
-          v-if="localSelectedElements.length > 0"
-        />
+        <q-btn label="Save" color="primary" @click="saveElements" class="q-mt-md"
+          v-if="localSelectedElements.length > 0" />
       </div>
 
       <!-- 显示计算结果的表格 -->
       <div class="col-8">
-        <q-table
-          :rows="elementsWithPercentage"
-          :columns="columns"
-          row-key="symbol"
-          rows-per-page-options="0"
-          virtual-scroll
-          style="height: 300px"
-        />
+        <q-table :rows="elementsWithPercentage" :columns="columns" row-key="symbol" rows-per-page-options="0"
+          virtual-scroll style="height: 300px" />
       </div>
     </div>
   </div>
@@ -54,8 +34,10 @@
 
 <script setup>
 import { ref, watch } from "vue";
-import { socket } from "boot/socketio";
 
+import { socketRDF } from "boot/socketio";
+
+const socket = socketRDF
 const props = defineProps({
   selectedElements: {
     type: Array,
@@ -96,7 +78,11 @@ const saveElements = () => {
     symbol: element.symbol,
     percentage: element.percentage,
   }));
+<<<<<<< HEAD
   socket.emit("selecte_elements", selectedFields);
+=======
+  socket.emit("select_elements", selectedFields);
+>>>>>>> origin/dev
   console.log("Elements with percentage:", elementsWithPercentage.value);
 };
 

@@ -15,7 +15,6 @@ class DM4Processor:
         pass
 
     def load_file(self, file_path, is_normalize=False):
-        print(os.path.splitext(file_path)[1])
         if os.path.splitext(file_path)[1] == ".dm4":
             dm4 = dm.dmReader(file_path)
             self.raw_data = dm4["data"]
@@ -39,6 +38,8 @@ class DM4Processor:
         if is_normalize:
             self.raw_data = self.raw_data.astype(np.float64)
             self.raw_data = normalize(self.raw_data)
+
+        self.mean_img = np.mean(self.raw_data, axis=(0, 1))
 
     def get_img(self, img_index):
         y = img_index // self.x_range
