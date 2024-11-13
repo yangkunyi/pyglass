@@ -4,6 +4,7 @@ import cv2
 from flask import Flask
 from flask_socketio import SocketIO, emit, Namespace
 import numpy as np
+from engineio.async_drivers import gevent
 from loguru import logger
 
 from DM4Processor import DM4_Processor
@@ -12,7 +13,9 @@ from RDFProcessor import RDFProcessor
 from CenterCalibrationProcessor import CenCal
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="http://localhost:9300")
+socketio = SocketIO(
+    app, cors_allowed_origins="http://localhost:9300", async_mode="gevent"
+)
 
 
 def image_response(img: np.ndarray, id=None):
@@ -204,4 +207,5 @@ socketio.on_namespace(ViewerNamespace("/viewer"))
 socketio.on_namespace(CenterCalibrationNamespace("/center_calibration"))
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True, port=5000)
+    # print("!!!!!!")
+    socketio.run(app, port=5000)

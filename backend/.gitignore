@@ -6,3 +6,5 @@
 # pixi environments
 .pixi
 *.egg-info
+
+output/
