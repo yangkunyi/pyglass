@@ -20,9 +20,11 @@ from DM4Processor import DM4_Processor
 from ImageProcessor import ImageProcessor
 from RDFProcessor import RDFProcessor
 from CenterCalibrationProcessor import CenCal
+from engineio.async_drivers import gevent
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="http://localhost:9300")
+socketio = SocketIO(app, cors_allowed_origins="http://localhost:9300", async_mode="gevent")
+
 
 def image_response(img: np.ndarray, id=None,id2=None):
     ### Convert float image in range 0-1 to uint8 and encode to base64
@@ -221,4 +223,5 @@ socketio.on_namespace(ViewerNamespace("/viewer"))
 socketio.on_namespace(CenterCalibrationNamespace("/center_calibration"))
 
 if __name__ == "__main__":
-    socketio.run(app, debug=True, port=5000)
+    socketio.run(app, debug=False, host="127.0.0.1", port=5000)
+

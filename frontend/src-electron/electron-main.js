@@ -1,6 +1,6 @@
-import { app, BrowserWindow, ipcMain, dialog } from "electron";
-import path from "path";
-import os from "os";
+const { app, BrowserWindow, ipcMain, dialog } = require("electron");
+const path = require("path");
+const os = require("os");
 
 // needed in case process is undefined under Linux
 const platform = process.platform || os.platform();
@@ -19,10 +19,11 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       // More info: https://v2.quasar.dev/quasar-cli-vite/developing-electron-apps/electron-preload-script
-      preload: path.resolve(__dirname, process.env.QUASAR_ELECTRON_PRELOAD),
+      preload: path.resolve(__dirname, 'electron-preload.js'),
     },
   });
 
+    mainWindow.webContents.openDevTools(); // 强制打开开发者工具
   mainWindow.loadURL(process.env.APP_URL);
 
   if (process.env.DEBUGGING) {

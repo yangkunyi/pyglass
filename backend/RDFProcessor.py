@@ -1,7 +1,7 @@
 import numpy as np
 
 from utils import (
-    get_scattering_factor_function,
+    # get_scattering_factor_function,
     radial_profile,
     fit_leastsq,
     calculate_phi,
@@ -49,10 +49,10 @@ class RDFProcessor:
     def set_element_data(self, element_data):
         self.element_data = element_data
 
-    def set_scattering_factor_function(self):
-        self.scattering_factor_function, self.scattering_factor_function_sq = (
-            get_scattering_factor_function(self.element_data)
-        )
+    # def set_scattering_factor_function(self):
+    #     self.scattering_factor_function, self.scattering_factor_function_sq = (
+    #         get_scattering_factor_function(self.element_data)
+    #     )
 
     def process(self):
         if self.img is None or self.element_data is None:
