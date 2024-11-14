@@ -1,6 +1,7 @@
 from ncempy.io import dm
 import numpy as np
 import os
+import py4DSTEM
 
 
 def normalize(data):
@@ -15,6 +16,11 @@ class DM4Processor:
         pass
 
     def load_file(self, file_path, is_normalize=False):
+        if os.path.splitext(file_path)[1] == ".mib":
+            datacube = py4DSTEM.import_file(filepath=file_path)
+            self.raw_data = datacube.data
+            self.y_range = self.raw_data.shape[0]
+            self.x_range = self.raw_data.shape[1]
         if os.path.splitext(file_path)[1] == ".dm4":
             dm4 = dm.dmReader(file_path)
             self.raw_data = dm4["data"]
@@ -47,7 +53,7 @@ class DM4Processor:
         return self.raw_data[y, x]
 
     def get_mean_img(self):
-        return np.mean(self.raw_data, axis=(0, 1))
+        return self.mean_img
 
     def get_range(self):
         return self.y_range, self.x_range
