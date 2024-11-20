@@ -8,53 +8,100 @@
       <!-- Left sidebar for sliders -->
       <div class="col-3" style="height: 100%; overflow-y: auto">
         <q-list bordered separator class="full-height">
-          <!-- Image Index Slider -->
-          <q-item>
-            <q-item-section>
-              <q-item-label overline>Image Index</q-item-label>
-              <q-slider
-                v-model="imageIndex"
-                :min="0"
-                :max="indexRange"
-                @update:model-value="changeImage"
-              />
-            </q-item-section>
-          </q-item>
-
-          <!-- Gamma Slider -->
+          <!-- Left Image Sliders -->
+          <div class="text-h6">Left Image</div>
           <q-item>
             <q-item-section>
               <q-item-label overline>Gamma</q-item-label>
               <q-slider
+                v-model="leftGamma"
+                :min="0.1"
+                :max="2.5"
                 :step="0.05"
-                @update:model-value="ajustImage"
+                @update:model-value="ajustLeftImage"
               />
             </q-item-section>
           </q-item>
-
           <q-item>
             <q-item-section>
               <q-item-label overline>Contrast</q-item-label>
               <q-slider
-                v-model="contrast"
+                v-model="leftContrast"
                 :min="0"
                 :max="5"
                 :step="0.1"
-                @update:model-value="ajustImage"
+                @update:model-value="ajustLeftImage"
               />
             </q-item-section>
           </q-item>
-
-          <!-- Brightness Slider -->
           <q-item>
             <q-item-section>
               <q-item-label overline>Brightness</q-item-label>
               <q-slider
-                v-model="brightness"
+                v-model="leftBrightness"
                 :min="0"
                 :max="1"
                 :step="0.01"
-                @update:model-value="ajustImage"
+                @update:model-value="ajustLeftImage"
+              />
+            </q-item-section>
+          </q-item>
+
+          <!-- Right Image Sliders -->
+          <div class="text-h6">Right Image</div>
+          <q-item>
+            <q-item-section>
+              <q-item-label overline>Image Index</q-item-label>
+              <q-slider
+                v-model="rightImageIndex"
+                :min="0"
+                :max="indexRange"
+                @update:model-value="changeRightImage"
+              />
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section>
+              <q-item-label overline>Gamma</q-item-label>
+              <q-slider
+                v-model="rightGamma"
+                :min="0.1"
+                :max="2.5"
+                :step="0.05"
+                @update:model-value="ajustRightImage"
+              />
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section>
+              <q-item-label overline>Contrast</q-item-label>
+              <q-slider
+                v-model="rightContrast"
+                :min="0"
+                :max="5"
+                :step="0.1"
+                @update:model-value="ajustRightImage"
+              />
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section>
+              <q-item-label overline>Brightness</q-item-label>
+              <q-slider
+                v-model="rightBrightness"
+                :min="0"
+                :max="1"
+                :step="0.01"
+                @update:model-value="ajustRightImage"
+              />
+            </q-item-section>
+          </q-item>
+          <q-item>
+            <q-item-section>
+              <q-item-label overline>Log Scale</q-item-label>
+              <q-toggle
+                v-model="log_scale"
+                @update:model-value="ajustRightImage"
               />
             </q-item-section>
           </q-item>
@@ -62,15 +109,23 @@
       </div>
 
       <!-- Right part for image display -->
-      <div class="col-9" style="height: 100%">
-        <q-card v-show="imageData" class="full-height flex flex-center">
-          <q-card-section>
-            <div ref="stageContainer" class="stage-container"></div>
-          </q-card-section>
-        </q-card>
-        <q-card v-show="!imageData" class="full-height flex flex-center">
-          <q-card-section class="text-center"> No image loaded </q-card-section>
-        </q-card>
+      <div class="col-9" style="height: 80vh">
+        <div class="flex row">
+          <q-card class="full-height flex flex-center col-6">
+            <ImageSelect
+              :mask_update_event="update_bin_mask"
+              :image_base64_str="LeftimageData"
+              :socket="socket"
+            />
+          </q-card>
+          <q-card class="full-height flex flex-center col-6">
+            <ImageSelect
+              :mask_update_event="update_virtual_mask"
+              :image_base64_str="RightimageData"
+              :socket="socket"
+            />
+          </q-card>
+        </div>
       </div>
     </div>
   </q-page>
@@ -80,24 +135,25 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { socketViewer, socketRDF } from "boot/socketio";
 import { useQuasar } from "quasar";
-import Konva from "konva";
+import ImageSelect from "components/ImageSelect.vue";
 
 // 定义响应式数据
 const selectedFile = ref(null);
 const $q = useQuasar();
-const imageData = ref(null);
-const imageShape = ref(null);
-const gamma = ref(1);
-const contrast = ref(1);
-const brightness = ref(0);
-const imageIndex = ref(0);
+const LeftimageData = ref(null);
+const RightimageData = ref(null);
+const leftGamma = ref(1);
+const leftContrast = ref(1);
+const leftBrightness = ref(0);
+const rightGamma = ref(1);
+const rightContrast = ref(1);
+const rightBrightness = ref(0);
+const rightImageIndex = ref(0);
 const indexRange = ref(0);
-
-const stageContainer = ref(null);
-const stage = ref(null);
-const layer = ref(null);
-
+const update_bin_mask = "update_bin_mask";
+const update_virtual_mask = "update_virtual_mask";
 const socket = socketViewer;
+const log_scale = ref(false);
 
 const openFile = async () => {
   const filePaths = await window.myAPI.openFileDialog();
@@ -111,56 +167,49 @@ const openFile = async () => {
   }
 };
 
-const ajustImage = () => {
+const ajustLeftImage = () => {
   socket.emit("update_adjust_params", {
-    gamma: gamma.value,
-    contrast: contrast.value,
-    brightness: brightness.value,
+    gamma: leftGamma.value,
+    contrast: leftContrast.value,
+    brightness: leftBrightness.value,
+    log_scale: log_scale.value,
+    side: "left",
   });
-  socket.emit("request_image", imageIndex.value);
+  socket.emit("request_image", { side: "left" });
 };
 
-const changeImage = () => {
-  socket.emit("request_image", imageIndex.value);
+const ajustRightImage = () => {
+  socket.emit("update_adjust_params", {
+    gamma: rightGamma.value,
+    contrast: rightContrast.value,
+    brightness: rightBrightness.value,
+    log_scale: log_scale.value,
+    side: "right",
+  });
+  socket.emit("request_image", { side: "right" });
 };
 
-// 定义绘制图像的函数
-const drawImage = () => {
-  const img = new Image();
-  img.src = "data:image/png;base64," + imageData.value;
-
-  img.onload = () => {
-    const konvaImage = new Konva.Image({
-      image: img,
-      width: stage.value.width(),
-      height: stage.value.height(),
-    });
-
-    // 清除之前的图像
-    layer.value.destroyChildren();
-    layer.value.add(konvaImage);
-    layer.value.batchDraw();
-  };
+const changeRightImage = () => {
+  socket.emit("set_index", {
+    index: rightImageIndex.value,
+  });
 };
 
 onMounted(() => {
-  stage.value = new Konva.Stage({
-    container: stageContainer.value,
-    width: 512,
-    height: 512,
-  });
-
-  layer.value = new Konva.Layer();
-  stage.value.add(layer.value);
-
-  socket.on("image_response", (data) => {
+  socket.on("right_image_response", (data) => {
     if (data.error) {
       console.error(data.error);
     } else {
       console.log("Image Response Received");
-      imageData.value = data.image_data;
-      imageShape.value = data.shape;
-      drawImage();
+      RightimageData.value = data.image_data;
+    }
+  });
+  socket.on("left_image_response", (data) => {
+    if (data.error) {
+      console.error(data.error);
+    } else {
+      console.log("Image Response Received");
+      LeftimageData.value = data.image_data;
     }
   });
 
@@ -176,8 +225,8 @@ onMounted(() => {
         timeout: 1000,
       });
       indexRange.value = data.index_range - 1;
-      socket.emit("request_image", imageIndex.value);
-      socketRDF.emit("load_image_rdf", true)
+      socket.emit("set_index", rightImageIndex.value);
+      socketRDF.emit("load_image_rdf", true);
     }
   });
 });

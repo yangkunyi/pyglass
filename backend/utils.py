@@ -2,8 +2,9 @@ import pickle
 
 import numpy as np
 import polarTransform
-# from abtem.parametrizations import KirklandParametrization
+from abtem.parametrizations import KirklandParametrization
 from scipy.optimize import leastsq
+from scipy.ndimage import zoom
 
 
 def getPath(filename):
@@ -104,26 +105,26 @@ def calculate_pdf(s, phi, r_ranges):
     return [np.sum(phi * np.sin(2 * np.pi * s * r)) for r in r_ranges]
 
 
-# def get_scattering_factor_function(element_data: list):
-#     with open("kirkland.pkl", "rb") as f:
-#         kirkland_dict = pickle.load(f)
+def get_scattering_factor_function(element_data: list):
+    with open("kirkland.pkl", "rb") as f:
+        kirkland_dict = pickle.load(f)
 
-#     kirkland_param = KirklandParametrization(kirkland_dict)
+    kirkland_param = KirklandParametrization(kirkland_dict)
 
-#     element_data_dict = {
-#         str(item["atomicNumber"]): item["percentage"] for item in element_data
-#     }
-#     functions = []
-#     for element, percentage in element_data_dict.items():
-#         functions.append((kirkland_param.scattering_factor(element), percentage / 100))
+    element_data_dict = {
+        str(item["atomicNumber"]): item["percentage"] for item in element_data
+    }
+    functions = []
+    for element, percentage in element_data_dict.items():
+        functions.append((kirkland_param.scattering_factor(element), percentage / 100))
 
-#     def combined_function(x):
-#         return sum(f(x) * p for f, p in functions)
+    def combined_function(x):
+        return sum(f(x) * p for f, p in functions)
 
-#     def combined_function_sq(x):
-#         return sum(f(x) ** 2 * p for f, p in functions)
+    def combined_function_sq(x):
+        return sum(f(x) ** 2 * p for f, p in functions)
 
-#     return (combined_function, combined_function_sq)
+    return (combined_function, combined_function_sq)
 
 
 def convert_to_polar(image, center):

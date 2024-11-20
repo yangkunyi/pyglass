@@ -16,7 +16,10 @@ class DM4Processor:
         pass
 
     def load_file(self, file_path, is_normalize=False):
-        if os.path.splitext(file_path)[1] == ".mib":
+        if (
+            os.path.splitext(file_path)[1] == ".mib"
+            or os.path.splitext(file_path)[1] == ".raw"
+        ):
             datacube = py4DSTEM.import_file(filepath=file_path)
             self.raw_data = datacube.data
             self.y_range = self.raw_data.shape[0]
@@ -55,6 +58,9 @@ class DM4Processor:
     def get_mean_img(self):
         return self.mean_img
 
+    def get_shape(self):
+        return self.raw_data.shape
+    
     def get_range(self):
         return self.y_range, self.x_range
 
