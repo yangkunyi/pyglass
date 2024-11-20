@@ -96,6 +96,15 @@
               />
             </q-item-section>
           </q-item>
+          <q-item>
+            <q-item-section>
+              <q-item-label overline>Log Scale</q-item-label>
+              <q-toggle
+                v-model="log_scale"
+                @update:model-value="ajustRightImage"
+              />
+            </q-item-section>
+          </q-item>
         </q-list>
       </div>
 
@@ -144,6 +153,7 @@ const indexRange = ref(0);
 const update_bin_mask = "update_bin_mask";
 const update_virtual_mask = "update_virtual_mask";
 const socket = socketViewer;
+const log_scale = ref(false);
 
 const openFile = async () => {
   const filePaths = await window.myAPI.openFileDialog();
@@ -162,6 +172,7 @@ const ajustLeftImage = () => {
     gamma: leftGamma.value,
     contrast: leftContrast.value,
     brightness: leftBrightness.value,
+    log_scale: log_scale.value,
     side: "left",
   });
   socket.emit("request_image", { side: "left" });
@@ -172,13 +183,16 @@ const ajustRightImage = () => {
     gamma: rightGamma.value,
     contrast: rightContrast.value,
     brightness: rightBrightness.value,
+    log_scale: log_scale.value,
     side: "right",
   });
   socket.emit("request_image", { side: "right" });
 };
 
 const changeRightImage = () => {
-  socket.emit("set_index", rightImageIndex.value);
+  socket.emit("set_index", {
+    index: rightImageIndex.value,
+  });
 };
 
 onMounted(() => {
@@ -211,7 +225,7 @@ onMounted(() => {
         timeout: 1000,
       });
       indexRange.value = data.index_range - 1;
-      socket.emit("request_image", imageIndex.value);
+      socket.emit("set_index", rightImageIndex.value);
       socketRDF.emit("load_image_rdf", true);
     }
   });

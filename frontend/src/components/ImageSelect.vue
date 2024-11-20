@@ -124,7 +124,9 @@ onMounted(() => {
 
 const generateAndUpdateMask = () => {
   const newMask = generateBinaryMask();
-  props.socket.emit(props.mask_update_event, { mask: newMask });
+  props.socket.emit(props.mask_update_event, {
+    mask: newMask,
+  });
 };
 
 const generateBinaryMask = () => {

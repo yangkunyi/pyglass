@@ -129,9 +129,9 @@ class ViewerNamespace(Namespace):
         self.left_processer.load_img(virtual_img)
         image_response(self.left_processer.get_img(), event_name="left_image_response")
 
-    def on_set_index(self, index):
-        logger.info(f"set index: {index}")
-        index = int(index)
+    def on_set_index(self, data):
+        # logger.info(f"set index: {data}")
+        index = int(data["index"])
         img = DM4_Processor.get_img(index)
         self.right_processer.load_img(img)
         image_response(
@@ -149,14 +149,16 @@ class ViewerNamespace(Namespace):
             )
 
     def on_update_adjust_params(self, data):
+        logger.info(f"on_update_adjust_params: {data}")
         gamma = data["gamma"]
         contrast = data["contrast"]
         brightness = data["brightness"]
+        log_scale = data["log_scale"]
         side = data["side"]
         if side == "left":
-            self.left_processer.updata_params(gamma, contrast, brightness)
+            self.left_processer.updata_params(gamma, contrast, brightness, log_scale)
         elif side == "right":
-            self.right_processer.updata_params(gamma, contrast, brightness)
+            self.right_processer.updata_params(gamma, contrast, brightness, log_scale)
 
 
 class RDFNamespace(Namespace):
