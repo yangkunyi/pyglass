@@ -2287,10 +2287,10 @@ kolorist@^1.5.1:
   resolved "https://registry.yarnpkg.com/kolorist/-/kolorist-1.8.0.tgz#edddbbbc7894bc13302cdf740af6374d4a04743c"
   integrity sha512-Y+60/zizpJ3HRH8DCss+q95yr6145JXZo46OTpFvDZWLfRCE4qChOyk1b26nMaNpfHHgxagk9dXT5OP0Tfe+dQ==
 
-konva@^9.3.15:
-  version "9.3.15"
-  resolved "https://registry.yarnpkg.com/konva/-/konva-9.3.15.tgz#0ffc10944784cfe8a4c7d02dc6072c87d9b17854"
-  integrity sha512-6jceV1u75a41Fwky7HIg7Xr092sn9g+emE/F4KrkNey9j5IwM/No91z4g13P9kbh0NePzC20YvfyGVS5EzliUA==
+konva@^9.3.16:
+  version "9.3.16"
+  resolved "https://registry.yarnpkg.com/konva/-/konva-9.3.16.tgz#0e8b52e8cb20c80c5e4cb98d0babd89ff6f95a2c"
+  integrity sha512-qa47cefGDDHzkToGRGDsy24f/Njrz7EHP56jQ8mlDcjAPO7vkfTDeoBDIfmF7PZtpfzDdooafQmEUJMDU2F7FQ==
 
 lazystream@^1.0.0:
   version "1.0.1"

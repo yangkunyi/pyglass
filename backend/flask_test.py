@@ -6,6 +6,8 @@ from flask_socketio import SocketIO, emit, Namespace
 import numpy as np
 from engineio.async_drivers import gevent
 from loguru import logger
+from scipy.ndimage import zoom
+from time import time
 
 from DM4Processor import DM4_Processor
 from ImageProcessor import ImageProcessor
@@ -14,25 +16,77 @@ from CenterCalibrationProcessor import CenCal
 from engineio.async_drivers import gevent
 
 app = Flask(__name__)
-socketio = SocketIO(
-    app, cors_allowed_origins="http://localhost:9300", async_mode="gevent"
-)
+socketio = SocketIO(app, cors_allowed_origins="http://localhost:9300")
 
 
-def image_response(img: np.ndarray, id=None,id2=None):
+def resize_mask(large_mask, original_shape):
+    """
+    将放大后的二值mask缩回到原始尺寸。
+
+    参数:
+    large_mask (numpy.ndarray): 放大后的二值mask。
+    original_shape (tuple): 原始mask的尺寸。
+
+    返回:
+    numpy.ndarray: 缩回到原始尺寸的二值mask。
+    """
+    # 计算缩放因子
+    zoom_factor = tuple([o / l for o, l in zip(original_shape, large_mask.shape)])
+
+    # 使用scipy.ndimage.zoom进行缩放
+    small_mask = zoom(large_mask, zoom_factor, order=0)
+
+    return small_mask
+
+
+def calculate_average_intensity(gray_images, mask):
+    """
+    计算每张灰度图在选定像素上的平均强度，并形成一个128x128的强度数组。
+
+    参数:
+    gray_images (numpy.ndarray): 形状为 (128, 128, 256, 256) 的灰度图数组。
+    mask (numpy.ndarray): 形状为 (256, 256) 的mask数组。
+
+    返回:
+    numpy.ndarray: 形状为 (128, 128) 的强度数组。
+    """
+    # 将mask扩展到与gray_images相同的维度
+    mask_expanded = np.broadcast_to(mask, gray_images.shape)
+    print(mask_expanded.shape)
+    # 选择选定像素
+    t1 = time()
+    selected_pixels = gray_images[mask_expanded == 1]
+
+    # 将选定像素重塑为 (128, 128, -1)
+    selected_pixels_reshaped = selected_pixels.reshape(
+        gray_images.shape[0], gray_images.shape[1], -1
+    )
+
+    # 计算每张灰度图的平均值
+    intensity_array = np.mean(selected_pixels_reshaped, axis=2)
+    t2 = time()
+    print("Time taken to calculate average intensity:", t2 - t1)
+    return intensity_array
+
+
+def image_response(img: np.ndarray, id=None, id2=None, event_name: str = None):
     ### Convert float image in range 0-1 to uint8 and encode to base64
     img = (img * 255).astype(np.uint8)
     _, buffer = cv2.imencode(".jpg", img)
     image_base64 = base64.b64encode(buffer).decode("utf-8")
+    if event_name is not None:
+        emit(event_name, {"image_data": image_base64})
     if id is None:
         emit("image_response", {"image_data": image_base64})
     else:
-        emit("image_response", {"image_data": image_base64, "id": id,"id2": id2})
+        emit("image_response", {"image_data": image_base64, "id": id, "id2": id2})
+
 
 class ViewerNamespace(Namespace):
     def __init__(self, namespace=None):
         super().__init__(namespace)
-        self.image_processer = ImageProcessor()
+        self.right_processer = ImageProcessor()
+        self.left_processer = ImageProcessor()
 
     def on_connect(self):
         print("Client connected: ViwerNamespace")
@@ -43,27 +97,66 @@ class ViewerNamespace(Namespace):
     def on_upload_dm4(self, file_path):
         print(file_path)
         DM4_Processor.load_file(file_path)
-        x_range, y_range = DM4_Processor.get_range()
-        index_range = x_range * y_range
+        shape = DM4_Processor.get_shape()
+        self.bin_mask_shape = shape[:2]
+        self.virtual_mask_shape = shape[2:]
+        index_range = shape[0] * shape[1]
         emit(
             "file_name_response",
             {"success": True, "index_range": index_range},
         )
-        # socketio.emit(
-        #     "load_image_rdf", {"load": True}, include_self=True, namespace="/rdf"
-        # )
 
-    def on_request_image(self, index):
+    def on_update_bin_mask(self, data):
+        print("update bin mask")
+        bin_mask = resize_mask(np.array(data["mask"]), self.bin_mask_shape).astype(
+            np.bool_
+        )
+        bin_img = DM4_Processor.raw_data[bin_mask].mean(axis=0)
+        self.right_processer.load_img(bin_img)
+        image_response(
+            self.right_processer.get_img(), event_name="right_image_response"
+        )
+
+    def on_update_virtual_mask(self, data):
+        print("update virtual mask")
+
+        virtual_mask = resize_mask(
+            np.array(data["mask"]), self.virtual_mask_shape
+        ).astype(np.bool_)
+        print("virtual mask shape:", virtual_mask.shape)
+        print("virtual mask:", virtual_mask.sum())
+        virtual_img = calculate_average_intensity(DM4_Processor.raw_data, virtual_mask)
+        self.left_processer.load_img(virtual_img)
+        image_response(self.left_processer.get_img(), event_name="left_image_response")
+
+    def on_set_index(self, index):
+        logger.info(f"set index: {index}")
         index = int(index)
         img = DM4_Processor.get_img(index)
-        self.image_processer.load_img(img)
-        image_response(self.image_processer.get_img())
+        self.right_processer.load_img(img)
+        image_response(
+            self.right_processer.get_img(), event_name="right_image_response"
+        )
+
+    def on_request_image(self, data):
+        if data["side"] == "left":
+            image_response(
+                self.left_processer.get_img(), event_name="left_image_response"
+            )
+        elif data["side"] == "right":
+            image_response(
+                self.right_processer.get_img(), event_name="right_image_response"
+            )
 
     def on_update_adjust_params(self, data):
         gamma = data["gamma"]
         contrast = data["contrast"]
         brightness = data["brightness"]
-        self.image_processer.updata_params(gamma, contrast, brightness)
+        side = data["side"]
+        if side == "left":
+            self.left_processer.updata_params(gamma, contrast, brightness)
+        elif side == "right":
+            self.right_processer.updata_params(gamma, contrast, brightness)
 
 
 class RDFNamespace(Namespace):
@@ -199,7 +292,7 @@ class CenterCalibrationNamespace(Namespace):
         img_color = cv2.cvtColor(processed_img, cv2.COLOR_GRAY2BGR)
         center = (processed_img.shape[1] // 2, processed_img.shape[0] // 2)
         cv2.circle(img_color, center, 3, (0, 0, 1), -1)
-        image_response(img_color, "center_calibration","after")
+        image_response(img_color, "center_calibration", "after")
 
     def on_get_range(self):
         x_range, y_range = DM4_Processor.get_range()
@@ -217,4 +310,3 @@ socketio.on_namespace(CenterCalibrationNamespace("/center_calibration"))
 
 if __name__ == "__main__":
     socketio.run(app, debug=False, host="127.0.0.1", port=5000)
-

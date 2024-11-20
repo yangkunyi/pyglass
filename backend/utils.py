@@ -4,6 +4,7 @@ import numpy as np
 import polarTransform
 from abtem.parametrizations import KirklandParametrization
 from scipy.optimize import leastsq
+from scipy.ndimage import zoom
 
 
 def getPath(filename):
@@ -137,3 +138,5 @@ def radial_profile(img):
     radial_mean = calculate_radial_mean(polar_image)
 
     return polar_image, radial_mean
+
+
