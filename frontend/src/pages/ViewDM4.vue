@@ -126,6 +126,22 @@
             />
           </q-card>
         </div>
+        <div class="q-mt-md">
+          <q-scroll-area style="height: calc(80vh - 250px)">
+            <div class="row">
+              <div
+                v-for="(image, index) in imageSeries"
+                :key="index"
+                class="q-mb-md col-4"
+              >
+                <q-img
+                  :src="`data:image/png;base64,${image}`"
+                  style="max-width: 100%; max-height: 100%"
+                />
+              </div>
+            </div>
+          </q-scroll-area>
+        </div>
       </div>
     </div>
   </q-page>
@@ -154,6 +170,7 @@ const update_bin_mask = "update_bin_mask";
 const update_virtual_mask = "update_virtual_mask";
 const socket = socketViewer;
 const log_scale = ref(false);
+const imageSeries = ref([]);
 
 const openFile = async () => {
   const filePaths = await window.myAPI.openFileDialog();
@@ -229,6 +246,15 @@ onMounted(() => {
       socketRDF.emit("load_image_rdf", true);
     }
   });
+
+  socket.on("image_series_response", (data) => {
+    if (data.error) {
+      console.error(data.error);
+    } else {
+      console.log("Image Series Response Received");
+      imageSeries.value = data.image_series;
+    }
+  });
 });
 </script>
 
@@ -244,5 +270,14 @@ onMounted(() => {
 .stage-container {
   width: 100%;
   height: 100%;
+}
+.q-gallery {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+}
+
+.q-gallery-slide {
+  padding: 10px;
 }
 </style>

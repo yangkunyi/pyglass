@@ -8,6 +8,7 @@ from engineio.async_drivers import gevent
 from loguru import logger
 from scipy.ndimage import zoom
 from time import time
+import json
 
 from DM4Processor import DM4_Processor
 from ImageProcessor import ImageProcessor
@@ -17,6 +18,67 @@ from engineio.async_drivers import gevent
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="http://localhost:9300")
+
+
+def hex_to_bgr(hex_color):
+    """
+    将16进制颜色转换为BGR格式
+    :param hex_color: 16进制颜色字符串（例如：'#FF0000'）
+    :return: BGR格式的颜色元组
+    """
+    hex_color = hex_color.lstrip("#")
+    r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+    return (b, g, r)  # OpenCV使用BGR格式
+
+
+def add_border_to_grayscale(grayscale_image, border_color_hex, border_width=1):
+    """
+    在灰度图像内部添加指定颜色的边框
+    :param grayscale_image: 二维NumPy数组，范围0-1，表示灰度图
+    :param border_color_hex: 16进制颜色字符串（例如：'#FF0000'）
+    :param border_width: 边框宽度（默认为10）
+    :return: 带有边框的灰度图像，范围0-1
+    """
+    # 确保输入图像范围在0-1之间
+    if grayscale_image.min() < 0 or grayscale_image.max() > 1:
+        raise ValueError("灰度图像的范围必须在0-1之间")
+
+    # 获取图像的尺寸
+    height, width = grayscale_image.shape
+
+    # 将灰度图像转换为BGR格式
+    grayscale_image_8bit = (grayscale_image * 255).astype(np.uint8)
+    bgr_image = cv2.cvtColor(grayscale_image_8bit, cv2.COLOR_GRAY2BGR)
+
+    # 将16进制颜色转换为BGR格式
+    border_color_bgr = hex_to_bgr(border_color_hex)
+
+    # 创建带有边框的区域
+    bgr_image_with_border = bgr_image.copy()
+    bgr_image_with_border[:border_width, :] = border_color_bgr  # 上边框
+    bgr_image_with_border[-border_width:, :] = border_color_bgr  # 下边框
+    bgr_image_with_border[:, :border_width] = border_color_bgr  # 左边框
+    bgr_image_with_border[:, -border_width:] = border_color_bgr  # 右边框
+
+    return bgr_image_with_border.astype(np.float32) / 255.0
+
+
+def get_mask_from_selection(
+    selection: dict, original_shape: tuple, scaled_shape: tuple
+):
+    x = int(selection["attrs"]["x"] / scaled_shape[1] * original_shape[1])
+    y = int(selection["attrs"]["y"] / scaled_shape[0] * original_shape[0])
+    if selection["className"] == "Rect":
+        logger.info(selection["className"])
+        width = int(selection["attrs"]["width"] / scaled_shape[1] * original_shape[1])
+        height = int(selection["attrs"]["height"] / scaled_shape[0] * original_shape[0])
+        mask = np.zeros(original_shape, dtype=np.bool_)
+        mask[y : y + height, x : x + width] = 1
+        return mask
+    elif selection["className"] == "Circle":
+        mask = np.zeros(original_shape, dtype=np.bool_)
+        mask[y, x] = 1
+        return mask
 
 
 def resize_mask(large_mask, original_shape):
@@ -69,6 +131,13 @@ def calculate_average_intensity(gray_images, mask):
     return intensity_array
 
 
+def convert_to_base64(img: np.ndarray) -> str:
+    img = (img * 255).astype(np.uint8)
+    _, buffer = cv2.imencode(".jpg", img)
+    image_base64 = base64.b64encode(buffer).decode("utf-8")
+    return image_base64
+
+
 def image_response(img: np.ndarray, id=None, id2=None, event_name: str = None):
     ### Convert float image in range 0-1 to uint8 and encode to base64
     img = (img * 255).astype(np.uint8)
@@ -108,21 +177,33 @@ class ViewerNamespace(Namespace):
 
     def on_update_bin_mask(self, data):
         print("update bin mask")
-        bin_mask = resize_mask(np.array(data["mask"]), self.bin_mask_shape).astype(
-            np.bool_
-        )
-        bin_img = DM4_Processor.raw_data[bin_mask].mean(axis=0)
-        self.right_processer.load_img(bin_img)
-        image_response(
-            self.right_processer.get_img(), event_name="right_image_response"
-        )
+        selections = [json.loads(s) for s in data["all_selections"]]
+
+        img_series = []
+        for s in selections:
+            bin_mask = get_mask_from_selection(
+                s, self.bin_mask_shape, (data["height"], data["width"])
+            )
+            bin_img = DM4_Processor.raw_data[bin_mask].mean(axis=0)
+            self.right_processer.load_img(bin_img)
+            img = self.right_processer.get_img()
+            border_img = add_border_to_grayscale(
+                img, border_color_hex=s["attrs"]["stroke"]
+            )
+            img_base64 = convert_to_base64(border_img)
+            img_series.append(img_base64)
+        if img_series == []:
+            emit("image_series_response", {"image_series": []})
+        emit("right_image_response", {"image_data": img_series[-1]})
+        emit("image_series_response", {"image_series": img_series[::-1][1:]})
 
     def on_update_virtual_mask(self, data):
         print("update virtual mask")
-
         virtual_mask = resize_mask(
             np.array(data["mask"]), self.virtual_mask_shape
         ).astype(np.bool_)
+        if virtual_mask.sum() == 0:
+            virtual_mask = np.ones(self.virtual_mask_shape, dtype=np.bool_)
         print("virtual mask shape:", virtual_mask.shape)
         print("virtual mask:", virtual_mask.sum())
         virtual_img = calculate_average_intensity(DM4_Processor.raw_data, virtual_mask)

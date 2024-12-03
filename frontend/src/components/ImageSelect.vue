@@ -49,24 +49,39 @@ onMounted(() => {
 
   let selection = null;
   let isDrawing = false;
+  let isDragging = false;
+  let color = null;
+
+  generateAndUpdateMask();
 
   stage.value.on("mousedown", (e) => {
-    isDrawing = true;
     const pos = stage.value.getPointerPosition();
-    selection = new Konva.Rect({
-      x: pos.x,
-      y: pos.y,
-      width: 0,
-      height: 0,
-      stroke: "red",
-      strokeWidth: 2,
-      fill: "rgba(255, 0, 0, 0.2)",
-    });
-    selectionLayer.value.add(selection);
+    if (e.evt.shiftKey) {
+      const shape = selectionLayer.value.getIntersection(pos);
+      if (shape) {
+        shape.remove();
+        generateAndUpdateMask();
+      }
+    } else {
+      // Normal drawing
+      isDrawing = true;
+      color = getRandomColor();
+      selection = new Konva.Rect({
+        x: pos.x,
+        y: pos.y,
+        width: 0,
+        height: 0,
+        stroke: color,
+        strokeWidth: 2,
+        fill: color + "33",
+      });
+      selectionLayer.value.add(selection);
+    }
   });
 
   stage.value.on("mousemove", (e) => {
     if (!isDrawing) return;
+    isDragging = true;
     const pos = stage.value.getPointerPosition();
     selection.width(pos.x - selection.x());
     selection.height(pos.y - selection.y());
@@ -74,10 +89,18 @@ onMounted(() => {
   });
 
   stage.value.on("mouseup", (e) => {
-    isDrawing = false;
+    if (!isDrawing) return;
     if (!selection) return;
+    if (!isDragging) {
+      const pos = stage.value.getPointerPosition();
+      console.log("click", pos);
+      handlePixelClick(pos);
+      selection.remove();
+    }
     selectionLayer.value.batchDraw();
     generateAndUpdateMask();
+    isDrawing = false;
+    isDragging = false;
   });
 
   const handleResize = () => {
@@ -122,10 +145,26 @@ onMounted(() => {
   loadImage(props.image_base64_str);
 });
 
+const handlePixelClick = (pos) => {
+  const color = getRandomColor();
+  const selection = new Konva.Circle({
+    x: pos.x,
+    y: pos.y,
+    radius: 3,
+    fill: color,
+    stroke: color,
+  });
+  selectionLayer.value.add(selection);
+  selectionLayer.value.batchDraw();
+};
+
 const generateAndUpdateMask = () => {
   const newMask = generateBinaryMask();
   props.socket.emit(props.mask_update_event, {
     mask: newMask,
+    all_selections: selectionLayer.value.getChildren(),
+    width: selectionLayer.value.getWidth(),
+    height: selectionLayer.value.getHeight(),
   });
 };
 
@@ -158,6 +197,15 @@ const resetSelection = () => {
     selectionLayer.value.draw();
     generateAndUpdateMask();
   }
+};
+
+const getRandomColor = () => {
+  const letters = "0123456789ABCDEF";
+  let color = "#";
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
 };
 
 defineExpose({
