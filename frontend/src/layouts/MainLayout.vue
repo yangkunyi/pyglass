@@ -15,6 +15,7 @@
           label="CALIBRATION"
           :to="{ name: 'calibration' }"
         />
+        <q-route-tab name="acom" label="ACOM" :to="{ name: 'ACOM' }" exact />
       </q-tabs>
     </q-header>
 

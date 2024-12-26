@@ -22,6 +22,7 @@ backend = { path = ".", editable = true }
 [tool.pixi.dependencies]
 py4dstem = ">=0.14.9,<0.15"
 gevent = ">=24.11.1,<25"
+pymatgen = ">=2024.11.13,<2025"
 
 [tool.hatch.build.targets.wheel]
 packages = ["backend/backend"]

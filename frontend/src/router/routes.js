@@ -44,6 +44,55 @@ const routes = [
       },
     ],
   },
+  {
+    path: "/acom",
+    name: "ACOM",
+    component: () => import("layouts/ACOMLayout.vue"),
+    children: [
+      {
+        path: "",
+        name: "Select_Area",
+        component: () => import("pages/ACOM/Select_Area.vue"),
+      },
+      {
+        path: "View_Area",
+        name: "View_Area",
+        component: () => import("pages/ACOM/View_Area.vue"),
+      },
+      {
+        path: "Set_Probe",
+        name: "Set_Probe",
+        component: () => import("pages/ACOM/Set_Probe.vue"),
+      },
+      {
+        path: "Detect_Bragg_Disks",
+        name: "Detect_Bragg_Disks",
+        component: () => import("pages/ACOM/Detect_Bragg_Disks.vue"),
+      },
+      {
+        path: "Calibrate_Center",
+        name: "Calibrate_Center",
+        component: () => import("pages/ACOM/Calibrate_Center.vue"),
+      },
+      {
+        path: "Calibrate_Ellipticity",
+        name: "Calibrate_Ellipticity",
+        component: () => import("pages/ACOM/Calibrate_Ellipticity.vue"),
+      },
+      {
+        path: "Calibrate_Pixel_Size",
+        name: "Calibrate_Pixel_Size",
+        component: () => import("pages/ACOM/Calibrate_Pixel_Size.vue"),
+      },
+      {
+        path: "Calculate_ACOM",
+        name: "Calculate_ACOM",
+        component: () => import("pages/ACOM/Calculate_ACOM.vue"),
+      }
+
+    ]
+
+  },
 
   // Always leave this as last one,
   // but you can also remove it

@@ -43,8 +43,8 @@ class CrystalStrainProcessor:
         "_get_strain_params",
     ]
 
-    def load_data(self, file_path: str):
-        self.datacube = py4DSTEM.import_file(filepath=file_path)
+    def load_data(self, data):
+        self.datacube = py4DSTEM.DataCube(data)
 
         self._dp_mean = self.datacube.get_dp_mean()
         self._dp_max = self.datacube.get_dp_max()

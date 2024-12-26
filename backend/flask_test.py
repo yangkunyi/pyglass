@@ -13,6 +13,7 @@ import json
 from DM4Processor import DM4_Processor
 from ImageProcessor import ImageProcessor
 from RDFProcessor import RDFProcessor
+from CrystalStrainProcessor import CrystalStrainProcessor
 from CenterCalibrationProcessor import CenCal
 from engineio.async_drivers import gevent
 
@@ -385,6 +386,57 @@ class CenterCalibrationNamespace(Namespace):
             "get_range_response",
             {"success": True, "index_range": index_range},
         )
+        
+        
+class Py4DSTEMNamespace(Namespace):
+    def on_connect(self):
+        logger.info("connect to Py4DSTEM")
+        self.processor = CrystalStrainProcessor()
+    def on_disconnect(self):
+        logger.info("disconnect from Py4DSTEM")
+    
+    def on_load_data(self, data):
+        logger.info(f"Py4DSTEM: load data {data}")
+        self.processor.load_data(DM4_Processor.raw_data)
+    
+    def on_set_guess_center(self, data):
+        logger.info(f"Py4DSTEM: set guess center {data}")
+        # self.processor.set_guess_center(data)
+    
+    def on_set_probe_xlims_ylims(self, data):
+        #Rect
+        logger.info(f"Py4DSTEM: set probe xlims ylims {data}")
+    
+    def on_set_probe(self, data):
+        logger.info(f"Py4DSTEM: set probe {data}")
+        self.processor.set_probe()
+    
+    def on_set_rxs_rys(self, data):
+        #Points
+        logger.info(f"Py4DSTEM: set rxs rys {data}")
+    
+    def on_set_disk_detect_params(self, data):
+        logger.info(f"Py4DSTEM: set disk detect params {data}")
+        
+    def on_set_amorph_xlims_ylims(self, data):
+        #Rect
+        logger.info(f"Py4DSTEM: set amorph xlims ylims {data}")
+    
+    def on_set_ellipse_fit_range(self, data):
+        #Ring in and out
+        logger.info(f"Py4DSTEM: set ellipse fit range {data}")
+        
+    def on_set_choose_basis_vector_params(self, data):
+        logger.info(f"Py4DSTEM: set choose basis vector params {data}")
+    
+    def on_set_choose_basis_vector_params(self, data):
+        logger.info(f"Py4DSTEM: set choose basis vector params {data}")
+    
+    def on_set_fit_basis_vectors_params(self, data):
+        logger.info(f"Py4DSTEM: set fit basis vectors params {data}")
+
+    def on_set_get_strain_params(self, data):
+        logger.info(f"Py4DSTEM: set get strain params {data}")
 
 
 socketio.on_namespace(RDFNamespace("/rdf"))
