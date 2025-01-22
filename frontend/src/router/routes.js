@@ -93,6 +93,30 @@ const routes = [
     ]
 
   },
+  {
+    path: "/sim",
+    name: "SIM",
+    component: () => import("layouts/DiffSimLayout.vue"),
+    children: [
+      {
+        path: "",
+        name: "DiffSim",
+        component: () => import("pages/DiffSim/DiffSim.vue"),
+      },
+    ]
+  },
+  {
+    path: "/xem",
+    name: "ACOM VIEWER",
+    component: () => import("layouts/AcomViewerLayout.vue"),
+    children: [
+      {
+        path: "",
+        name: "AcomViewer",
+        component: () => import("pages/ACOM_XEM/ACOM_Viewer.vue"),
+      },
+    ]
+  },
 
   // Always leave this as last one,
   // but you can also remove it

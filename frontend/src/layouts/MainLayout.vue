@@ -15,7 +15,10 @@
           label="CALIBRATION"
           :to="{ name: 'calibration' }"
         />
-        <q-route-tab name="acom" label="ACOM" :to="{ name: 'ACOM' }" exact />
+        <q-route-tab name="acom" label="ACOM" to="/ACOM" exact />
+        <q-route-tab name="sim" label="SIM" to="/SIM" exact />
+        <q-route-tab name="xem" label="ACOM VIEWER" to="/XEM" exact /> 
+
       </q-tabs>
     </q-header>
 

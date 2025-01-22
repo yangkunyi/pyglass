@@ -1,5 +1,6 @@
 import base64
-
+import matplotlib
+matplotlib.use('Agg')  # 切换后端为 Agg
 import cv2
 from flask import Flask
 from flask_socketio import SocketIO, emit, Namespace
@@ -9,13 +10,21 @@ from loguru import logger
 from scipy.ndimage import zoom
 from time import time
 import json
+import pickle
+import scipy
+import matplotlib.pyplot as plt
+
+from io import BytesIO
+import PIL  
 
 from DM4Processor import DM4_Processor
 from ImageProcessor import ImageProcessor
 from RDFProcessor import RDFProcessor
+from XemSimulator import XemSimulator
 from CrystalStrainProcessor import CrystalStrainProcessor
 from CenterCalibrationProcessor import CenCal
 from engineio.async_drivers import gevent
+from XemACOMViewer import XemACOMViewer
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="http://localhost:9300")
@@ -134,7 +143,7 @@ def calculate_average_intensity(gray_images, mask):
 
 def convert_to_base64(img: np.ndarray) -> str:
     img = (img * 255).astype(np.uint8)
-    _, buffer = cv2.imencode(".jpg", img)
+    _, buffer = cv2.imencode(".png", img)
     image_base64 = base64.b64encode(buffer).decode("utf-8")
     return image_base64
 
@@ -142,7 +151,7 @@ def convert_to_base64(img: np.ndarray) -> str:
 def image_response(img: np.ndarray, id=None, id2=None, event_name: str = None):
     ### Convert float image in range 0-1 to uint8 and encode to base64
     img = (img * 255).astype(np.uint8)
-    _, buffer = cv2.imencode(".jpg", img)
+    _, buffer = cv2.imencode(".png", img)
     image_base64 = base64.b64encode(buffer).decode("utf-8")
     if event_name is not None:
         emit(event_name, {"image_data": image_base64})
@@ -437,11 +446,146 @@ class Py4DSTEMNamespace(Namespace):
 
     def on_set_get_strain_params(self, data):
         logger.info(f"Py4DSTEM: set get strain params {data}")
+        
+        
 
+class XemSimulatorNamespace(Namespace):
+    def on_connect(self):
+        logger.info("connect to XemSimulatorNamespace")
+        self.simulator = XemSimulator()
+        
+    def on_disconnect(self):
+        logger.info("disconnect from XemSimulatorNamespace")
+    
+    def on_load_structure(self, data):
+        logger.info(f"XemSimulatorNamespace: load structure {data}")
+        self.simulator.load_structure(data)
+        emit("load_structure_success", {"success": True})
+        
+    def on_generate_grid(self, data):
+        logger.info(f"XemSimulatorNamespace: generate grid {data}")
+        self.simulator.create_sample_grid(resolution=data["resolution"], crystal_system=data["crystal_system"]['value'])
+        emit("generate_grid_success", {"success": True, "grid_x":self.simulator.grid_x.tolist(), "grid_y":self.simulator.grid_y.tolist()})
+        
+    def on_simulate(self, data):
+        logger.info(f"XemSimulatorNamespace: simulate {data}")
+        self.simulator.create_dif_gen_params(accelerating_voltage=data["accelerating_voltage"], min_intensity=data["min_intensity"])
+        self.simulator.set_sim_params(half_shape=(data["image_size"]//2, data["image_size"]//2), pixel_size=data["pixel_size"], max_excitation_error=data["max_excitation_error"])
+        coords, intensities = self.simulator.simulate()
+        emit("simulate_success", {"success": True, "coords":coords, "intensities":intensities})
 
+class XemACOMViewerNamespace(Namespace):
+    def on_connect(self):
+        logger.info("connect to XemACOMViewerNamespace")
+        self.viewer = XemACOMViewer()
+        self.image_processer = ImageProcessor()
+        
+    def on_disconnect(self):
+        logger.info("disconnect from XemACOMViewerNamespace")
+        
+    def on_load_data(self, data):
+        logger.info(f"XemACOMViewerNamespace: load data {data}")
+        data = np.load(data["filePath"])
+        self.viewer.load_data(data)
+        self.viewer.set_pixel_size(0.0338)
+        emit("load_data_success", {"success": True})
+        
+    def on_load_results(self, data):
+        logger.info(f"XemACOMViewerNamespace: load results {data}")
+        with open(data["filePath"], "rb") as f:
+            result, phase_dict = pickle.load(f)
+        self.viewer.load_matching_results(result,phase_dict)
+        emit("load_results_success", {"success": True})
+        
+    def on_load_simulations(self, data):
+        logger.info(f"XemACOMViewerNamespace: load simulations {data}")
+        with open(data["filePath"], "rb") as f:
+            data = pickle.load(f)
+        self.viewer.load_simulations(data)
+        emit("load_simulations_success", {"success": True})
+    
+    def on_set_symmetry(self, data):
+        logger.info(f"XemACOMViewerNamespace: set symmetry {data}")
+        self.viewer.set_symmetry(data["symmetry"]['value'])
+        legend = self.viewer.get_legend()
+        legend = legend[:, :, [2, 1, 0]]
+        resized_legend = cv2.resize(legend, (int(legend.shape[1]/4), int(legend.shape[0]/4)), interpolation=cv2.INTER_AREA)
+        image_response(resized_legend, event_name="update_legend")
+    
+    def on_get_ipf(self, data):
+        logger.info(f"XemACOMViewerNamespace: get ipf {data}")
+        direction = data["direction"]['value']
+        threshold = data["threshold"]
+        rgb_all = self.viewer.get_ipf(direction, threshold)
+        bgr_image = rgb_all[:, :, [2, 1, 0]]
+        zoom_factor = (256/bgr_image.shape[0], 256/bgr_image.shape[1], 1)
+        resized_image = scipy.ndimage.zoom(bgr_image, zoom_factor, order=0)
+        image_response(resized_image, event_name="get_ipf_success")
+
+    def on_update_adjust_params(self, data):
+        logger.info(f"XemACOMViewerNamespace: update adjust params {data}")
+        gamma = data["gamma"]
+        contrast = data["contrast"]
+        brightness = data["brightness"]
+        log_scale = data["log_scale"]
+        self.image_processer.updata_params(gamma, contrast, brightness, log_scale)
+
+    def on_update_virtual_mask(self, data):
+        logger.info(f"XemACOMViewerNamespace: update virtual mask {data}")
+        selections = [json.loads(s) for s in data["all_selections"]]
+        ox = selections[0]["attrs"]["x"]
+        oy = selections[0]["attrs"]["y"]
+        
+        width = data["width"]
+        height = data["height"]
+
+        px = int(ox/width*self.viewer.dp.data.shape[1])
+        py = int(oy/height*self.viewer.dp.data.shape[0])
+        
+        img, x, y, intensity = self.viewer.get_template_over_pattern(px, py)
+        
+        self.image_processer.load_img(img)
+        self.markers = (x, y, intensity)
+        img_normalized = self.image_processer.get_img()
+        
+        plt.imshow(img_normalized, cmap='gray')
+        plt.scatter(x, y, s=intensity, marker="x", c='blue')
+        plt.axis('off')
+        
+        buffer_ = BytesIO()
+        plt.savefig(buffer_,format = 'png', bbox_inches='tight', pad_inches=0)
+        buffer_.seek(0)
+        img = PIL.Image.open(buffer_)
+        img_array =  np.asarray(img) /255
+        image_response(img_array, event_name="toverp")
+        buffer_.close()
+        plt.close("all")
+    
+    def on_request_image(self, data):
+        logger.info(f"XemACOMViewerNamespace: request image {data}")
+        x, y, intensity = self.markers
+        
+        self.markers = (x, y, intensity)
+        img_normalized = self.image_processer.get_img()
+        
+        plt.imshow(img_normalized, cmap='gray')
+        plt.scatter(x, y, s=intensity, marker="x", c='blue')
+        plt.axis('off')
+        
+        buffer_ = BytesIO()
+        plt.savefig(buffer_,format = 'png', bbox_inches='tight', pad_inches=0)
+        buffer_.seek(0)
+        img = PIL.Image.open(buffer_)
+        img_array =  np.asarray(img) /255
+        image_response(img_array, event_name="toverp")
+        buffer_.close()
+        plt.close("all")
+        
 socketio.on_namespace(RDFNamespace("/rdf"))
 socketio.on_namespace(ViewerNamespace("/viewer"))
 socketio.on_namespace(CenterCalibrationNamespace("/center_calibration"))
+socketio.on_namespace(XemSimulatorNamespace("/sim"))
+socketio.on_namespace(XemACOMViewerNamespace("/xem"))
 
 if __name__ == "__main__":
     socketio.run(app, debug=False, host="127.0.0.1", port=5000)

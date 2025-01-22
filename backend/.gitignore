@@ -6,5 +6,7 @@
 # pixi environments
 .pixi
 *.egg-info
-
+*.ipynb
 output/
+src/
+*.npy
