@@ -22,12 +22,10 @@ def get_template_coordinates(pattern, simulation, in_plane_angle, mirrored_templ
         return x, y, np.sqrt(intensities) * size_factor
 
 class XemACOMViewer:
-    def load_data(self, data:np.ndarray):
-        self.dp = hs.signals.Signal2D(data)
-        self.dp.set_signal_type("electron_diffraction")
-        self.dp.center_direct_beam(method="blur", half_square_width=50, sigma=1.5)
-        self.dp.data -= self.dp.data.min()
-        self.dp.data *= 1 / self.dp.data.max()
+    def load_data(self, dp):
+        self.dp = dp
+        # self.dp.data -= self.dp.data.min()
+        # self.dp.data *= 1 / self.dp.data.max()
         
     def set_pixel_size(self, pixel_size):
         self.dp.set_diffraction_calibration(pixel_size)
@@ -79,7 +77,7 @@ class XemACOMViewer:
         rgb = ckey.orientation2color(self.xmap[phase].orientations)
         rgb_all[self.xmap.phase_id == phase_id] = rgb
         
-        mask = self.xmap.correlation[:,0] > (self.xmap.correlation[:,0].max()*threshold)
+        mask = self.xmap.correlation[:] > (self.xmap.correlation[:].max()*threshold)
         mask = mask[:, np.newaxis]
         
         return np.reshape(rgb_all * mask, (self.dp.data.shape[0], self.dp.data.shape[1], 3))

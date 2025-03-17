@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import path from "path";
 import os from "os";
+import { event } from "quasar";
 
 // needed in case process is undefined under Linux
 const platform = process.platform || os.platform();
@@ -61,3 +62,12 @@ ipcMain.handle("open-file-dialog", async (event) => {
 
   return filePaths;
 });
+
+ipcMain.handle("save-file-dialog", async (event) =>{
+  const {filePath} = await dialog.showSaveDialog({
+    title: "Save File",
+    defaultPath: 'untitled.pkl'
+  })
+
+  return filePath
+})

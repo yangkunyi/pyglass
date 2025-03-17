@@ -15,6 +15,7 @@ from pyxem.utils.indexation_utils import results_dict_to_crystal_map
 
 from diffsims.generators.rotation_list_generators import get_beam_directions_grid
 
+import pickle
 
 def grid_to_xy(grid):
     from orix.quaternion.rotation import Rotation
@@ -72,4 +73,12 @@ class XemSimulator:
             intensities.append(intensity.tolist())
             
         return coords, intensities
+    
+    def save_simulation(self, path):
+        with open(path, "wb") as f:
+            pickle.dump(self.diffraction_library, f)
+    
+    def load_simulation(self, path):
+        with open(path, "rb") as f:
+            self.diffraction_library = pickle.load(f)
     

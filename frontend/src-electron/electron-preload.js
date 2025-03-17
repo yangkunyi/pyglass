@@ -33,4 +33,7 @@ contextBridge.exposeInMainWorld("myAPI", {
   openFileDialog: async () => {
     return await ipcRenderer.invoke("open-file-dialog");
   },
+  saveFileDialog: async () => {
+    return await ipcRenderer.invoke("save-file-dialog");
+  },
 });

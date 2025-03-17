@@ -25,9 +25,10 @@ from CrystalStrainProcessor import CrystalStrainProcessor
 from CenterCalibrationProcessor import CenCal
 from engineio.async_drivers import gevent
 from XemACOMViewer import XemACOMViewer
+from XemMatcher import XemMatcher
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="http://localhost:9300")
+socketio = SocketIO(app, ping_timeout=86400, ping_interval=300,cors_allowed_origins="http://localhost:9300")
 
 
 def hex_to_bgr(hex_color):
@@ -255,14 +256,45 @@ class ViewerNamespace(Namespace):
 class RDFNamespace(Namespace):
     def __init__(self, namespace=None):
         super().__init__(namespace)
-        self.image_processer = ImageProcessor()
         self.rdf_processor = RDFProcessor()
 
     def on_connect(self):
-        print("Client connected: RDFNamespace")
+        self.right_processer = ImageProcessor()
+        self.left_processer = ImageProcessor()
+        self.rdf_processor = RDFProcessor()
+        # shape = DM4_Processor.get_shape()
+        # self.bin_mask_shape = shape[:2]
+        # self.virtual_mask_shape = shape[2:]
+        logger.info("Client connected: RDFNamespace")
 
     def on_disconnect(self):
-        print("Client disconnected: RDFNamespace")
+        logger.info("Client disconnected: RDFNamespace")
+        
+    def on_update_bin_mask(self, data):
+        print("update bin mask")
+        shape = DM4_Processor.get_shape()
+        self.bin_mask_shape = shape[:2]
+        self.virtual_mask_shape = shape[2:]
+        # logger.info(f"update bin mask: {data}")
+        selections = [json.loads(s) for s in data["all_selections"]]
+
+        img_series = []
+        for s in selections:
+            bin_mask = get_mask_from_selection(
+                s, self.bin_mask_shape, (data["height"], data["width"])
+            )
+            bin_img = DM4_Processor.raw_data[bin_mask].mean(axis=0)
+            self.right_processer.load_img(bin_img)
+            img = self.right_processer.get_img()
+            border_img = add_border_to_grayscale(
+                img, border_color_hex=s["attrs"]["stroke"]
+            )
+            img_base64 = convert_to_base64(border_img)
+            img_series.append(img_base64)
+        if img_series == []:
+            emit("image_series_response", {"image_series": []})
+        print(img_series[-1])
+        emit("right_image_response", {"image_data": img_series[-1]})
 
     def on_load_image_rdf(self, data):
         print("rdf namespace load image")
@@ -273,7 +305,8 @@ class RDFNamespace(Namespace):
         gamma = data["gamma"]
         contrast = data["contrast"]
         brightness = data["brightness"]
-        self.image_processer.updata_params(gamma, contrast, brightness)
+        self.left_processer.updata_params(gamma, contrast, brightness)
+        self.right_processer.updata_params(gamma, contrast, brightness)
 
     def on_select_elements(self, data):
         logger.debug("select elements")
@@ -296,8 +329,8 @@ class RDFNamespace(Namespace):
     def on_request_img_with_range(self, data):
         start_index = data["startIndex"]
         end_index = data["endIndex"]
-        self.image_processer.load_img(self.rdf_processor.get_image())
-        img = self.image_processer.get_img()
+        self.left_processer.load_img(self.rdf_processor.get_image())
+        img = self.left_processer.get_img()
 
         # Convert image to color (if it's grayscale)
         img_color = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
@@ -314,8 +347,8 @@ class RDFNamespace(Namespace):
     def on_request_polar_img_with_range(self, data):
         start_index = data["startIndex"]
         end_index = data["endIndex"]
-        self.image_processer.load_img(self.rdf_processor.get_polar_image())
-        img = self.image_processer.get_img()
+        self.right_processer.load_img(self.rdf_processor.get_polar_image())
+        img = self.right_processer.get_img()
 
         # Convert image to color (if it's grayscale)
         img_color = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
@@ -453,6 +486,7 @@ class XemSimulatorNamespace(Namespace):
     def on_connect(self):
         logger.info("connect to XemSimulatorNamespace")
         self.simulator = XemSimulator()
+        self.matcher = XemMatcher()
         
     def on_disconnect(self):
         logger.info("disconnect from XemSimulatorNamespace")
@@ -473,6 +507,30 @@ class XemSimulatorNamespace(Namespace):
         self.simulator.set_sim_params(half_shape=(data["image_size"]//2, data["image_size"]//2), pixel_size=data["pixel_size"], max_excitation_error=data["max_excitation_error"])
         coords, intensities = self.simulator.simulate()
         emit("simulate_success", {"success": True, "coords":coords, "intensities":intensities})
+        
+    def on_save_simulation(self, data):
+        logger.info(f"XemSimulatorNamespace: save simulation {data}")
+        self.simulator.save_simulation(data)
+        emit("save_simulate_success", {"success": True})
+
+    def on_load_simulation(self, data):
+        logger.info(f"XemSimulatorNamespace: load simulation {data}")
+        self.simulator.load_simulation(data)
+        emit("load_simulation_success", {"success": True})
+    
+    def on_do_matching(self):
+        logger.info(f"XemSimulatorNamespace: do matching")
+        self.matcher.load_data(DM4_Processor.dp)
+        self.matcher.set_pixel_size(self.simulator.pixel_size)
+        self.matcher.load_simulations(self.simulator.diffraction_library)
+        self.matcher.do_matching()
+        emit("do_matching_success", {"success": True})
+    
+    def on_save_result(self, data):
+        logger.info(f"XemSimulatorNamespace: save result {data}")
+        self.matcher.save_result(data)
+        emit("save_result_success", {"success": True})
+        
 
 class XemACOMViewerNamespace(Namespace):
     def on_connect(self):
@@ -483,11 +541,11 @@ class XemACOMViewerNamespace(Namespace):
     def on_disconnect(self):
         logger.info("disconnect from XemACOMViewerNamespace")
         
-    def on_load_data(self, data):
-        logger.info(f"XemACOMViewerNamespace: load data {data}")
-        data = np.load(data["filePath"])
-        self.viewer.load_data(data)
-        self.viewer.set_pixel_size(0.0338)
+    def on_load_data(self):
+        logger.info(f"XemACOMViewerNamespace: load data")
+        self.viewer.load_data(DM4_Processor.dp)
+        # self.viewer.set_pixel_size(0.0162)
+        logger.info(f"XemACOMViewerNamespace: load_data_success")
         emit("load_data_success", {"success": True})
         
     def on_load_results(self, data):
@@ -501,6 +559,10 @@ class XemACOMViewerNamespace(Namespace):
         logger.info(f"XemACOMViewerNamespace: load simulations {data}")
         with open(data["filePath"], "rb") as f:
             data = pickle.load(f)
+        try:
+            data = data['X']['simulations']
+        except:
+            data = data
         self.viewer.load_simulations(data)
         emit("load_simulations_success", {"success": True})
     
@@ -580,6 +642,7 @@ class XemACOMViewerNamespace(Namespace):
         image_response(img_array, event_name="toverp")
         buffer_.close()
         plt.close("all")
+        
         
 socketio.on_namespace(RDFNamespace("/rdf"))
 socketio.on_namespace(ViewerNamespace("/viewer"))

@@ -68,6 +68,34 @@
             @click="simulate"
             >Simulate
           </q-btn>
+          <q-btn
+            no-caps
+            class="full-width q-mb-md"
+            color="primary"
+            @click="saveFile"
+            >Save Simulation
+          </q-btn>
+          <q-btn
+            no-caps
+            class="full-width q-mb-md"
+            color="primary"
+            @click="loadFile"
+            >Load Simulation
+          </q-btn>
+          <q-btn
+            no-caps
+            class="full-width q-mb-md"
+            color="primary"
+            @click="doMatching"
+            >Do Matching
+          </q-btn>
+          <q-btn
+            no-caps
+            class="full-width q-mb-md"
+            color="primary"
+            @click="saveResult"
+            >Save Result
+          </q-btn>
         </q-card>
       </div>
       <div class="col-5" style="height: 100%">
@@ -114,6 +142,35 @@ const simulationData = ref(null);
 let gridChart = null;
 let simulationChart = null;
 
+const loadFile = async () => {
+  const filePaths = await window.myAPI.openFileDialog();
+  if (filePaths && filePaths.length > 0) {
+    selectedFile.value = filePaths[0];
+    console.log(selectedFile.value);
+    $q.loading.show();
+    socket.emit("load_simulation", selectedFile.value);
+  } else {
+    selectedFile.value = null;
+  }
+};
+
+const doMatching = () => {
+  socket.emit("do_matching");
+  $q.loading.show();
+};
+
+const saveResult = async () => {
+  const filePaths = await window.myAPI.saveFileDialog();
+  if (filePaths && filePaths.length > 0) {
+    selectedFile.value = filePaths;
+    console.log(selectedFile.value);
+    $q.loading.show();
+    socket.emit("save_result", selectedFile.value);
+  } else {
+    selectedFile.value = null;
+  }
+};
+
 const openFile = async () => {
   const filePaths = await window.myAPI.openFileDialog();
   if (filePaths && filePaths.length > 0) {
@@ -121,6 +178,18 @@ const openFile = async () => {
     console.log(selectedFile.value);
     $q.loading.show();
     socket.emit("load_structure", selectedFile.value);
+  } else {
+    selectedFile.value = null;
+  }
+};
+
+const saveFile = async () => {
+  const filePaths = await window.myAPI.saveFileDialog();
+  if (filePaths && filePaths.length > 0) {
+    selectedFile.value = filePaths;
+    console.log(selectedFile.value);
+    $q.loading.show();
+    socket.emit("save_simulation", selectedFile.value);
   } else {
     selectedFile.value = null;
   }
@@ -279,6 +348,50 @@ onMounted(() => {
     $q.loading.hide();
     $q.notify({
       message: "Simulation Success",
+      color: "primary",
+      icon: "cloud_done",
+      position: "center",
+      timeout: 1000,
+    });
+    simulationData.value = data;
+    createSimulationChart(data, 0);
+  });
+  socket.on("save_simulate_success", (data) => {
+    $q.loading.hide();
+    $q.notify({
+      message: "Save Simulation Success",
+      color: "primary",
+      icon: "cloud_done",
+      position: "center",
+      timeout: 1000,
+    });
+    simulationData.value = data;
+    createSimulationChart(data, 0);
+  });
+  socket.on("do_matching_success", (data) => {
+    $q.loading.hide();
+    $q.notify({
+      message: "Matching Success",
+      color: "primary",
+      icon: "cloud_done",
+      position: "center",
+      timeout: 1000,
+    });
+  });
+  socket.on("save_result_success", (data) => {
+    $q.loading.hide();
+    $q.notify({
+      message: "Result Saved",
+      color: "primary",
+      icon: "cloud_done",
+      position: "center",
+      timeout: 1000,
+    });
+  });
+  socket.on("load_simulation_success", (data) => {
+    $q.loading.hide();
+    $q.notify({
+      message: "Simulation Loaded",
       color: "primary",
       icon: "cloud_done",
       position: "center",

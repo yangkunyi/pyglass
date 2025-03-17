@@ -2,6 +2,7 @@ from ncempy.io import dm
 import numpy as np
 import os
 import py4DSTEM
+import hyperspy.api as hs
 
 
 def normalize(data):
@@ -47,8 +48,13 @@ class DM4Processor:
         if is_normalize:
             self.raw_data = self.raw_data.astype(np.float64)
             self.raw_data = normalize(self.raw_data)
+            
+        self.dp = hs.signals.Signal2D(self.raw_data)
+        self.dp.set_signal_type("electron_diffraction")
+        self.dp.center_direct_beam(method="blur", half_square_width=50, sigma=1.5)
+        self.dp.calibration.center=None
 
-        self.mean_img = np.mean(self.raw_data, axis=(0, 1))
+        self.mean_img = self.dp.mean().data
 
     def get_img(self, img_index):
         y = img_index // self.x_range

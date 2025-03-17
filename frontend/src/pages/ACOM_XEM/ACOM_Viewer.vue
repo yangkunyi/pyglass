@@ -210,12 +210,14 @@ const openSimulations = async () => {
 };
 
 const openData = async () => {
-  openFile(selectedSimulations, "data");
+  $q.loading.show();
+  socket.emit("load_data");
 };
 
 onMounted(() => {
   socket.on("load_data_success", (data) => {
     if (data.success) {
+      console.log("data Loaded");
       $q.loading.hide();
       $q.notify({
         message: "Crystal Loaded",

@@ -18,6 +18,11 @@ const routes = [
             name: "2",
             component: () => import("pages/RDF_plot.vue"),
           },
+          {
+            path: "RDF_sel",
+            name: "RDF_sel",
+            component: () => import("pages/RDF_sel.vue"),
+          },
         ],
       },
       {
