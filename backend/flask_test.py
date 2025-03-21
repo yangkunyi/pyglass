@@ -271,7 +271,7 @@ class RDFNamespace(Namespace):
         logger.info("Client disconnected: RDFNamespace")
         
     def on_update_bin_mask(self, data):
-        print("update bin mask")
+        logger.info(f"update bin mask")
         shape = DM4_Processor.get_shape()
         self.bin_mask_shape = shape[:2]
         self.virtual_mask_shape = shape[2:]
@@ -293,7 +293,7 @@ class RDFNamespace(Namespace):
             img_series.append(img_base64)
         if img_series == []:
             emit("image_series_response", {"image_series": []})
-        print(img_series[-1])
+        # print(img_series[-1])
         emit("right_image_response", {"image_data": img_series[-1]})
 
     def on_load_image_rdf(self, data):
@@ -563,6 +563,10 @@ class XemACOMViewerNamespace(Namespace):
             data = data['X']['simulations']
         except:
             data = data
+        try:
+            data = data['djz']['simulations']
+        except:
+            data = data
         self.viewer.load_simulations(data)
         emit("load_simulations_success", {"success": True})
     
@@ -651,4 +655,5 @@ socketio.on_namespace(XemSimulatorNamespace("/sim"))
 socketio.on_namespace(XemACOMViewerNamespace("/xem"))
 
 if __name__ == "__main__":
+    
     socketio.run(app, debug=False, host="127.0.0.1", port=5000)

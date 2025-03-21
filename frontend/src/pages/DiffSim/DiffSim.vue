@@ -87,7 +87,7 @@
             class="full-width q-mb-md"
             color="primary"
             @click="doMatching"
-            >Do Matching
+            >Index
           </q-btn>
           <q-btn
             no-caps
@@ -102,7 +102,25 @@
         <div ref="gridChartContainer" style="height: 100%"></div>
       </div>
       <div class="col-5" style="height: 100%">
-        <div ref="simulationChartContainer" style="height: 100%"></div>
+        <!-- 添加滑块控制 -->
+        <q-card class="q-mb-sm">
+          <q-slider
+            v-model="symbolSizeFactor"
+            :min="0.1"
+            :max="10"
+            :step="0.1"
+            label-always
+            class="q-pa-md"
+          >
+            <template v-slot:label>
+              Size Scale: {{ symbolSizeFactor.toFixed(1) }}
+            </template>
+          </q-slider>
+        </q-card>
+        <div
+          ref="simulationChartContainer"
+          style="height: calc(100% - 72px)"
+        ></div>
       </div>
 
       <!-- Container for the chart -->
@@ -116,6 +134,7 @@ import { socketSim } from "boot/socketio";
 import { useQuasar } from "quasar";
 import * as echarts from "echarts";
 
+const symbolSizeFactor = ref(2);
 const selectedFile = ref(null);
 const $q = useQuasar();
 const socket = socketSim;
@@ -259,6 +278,18 @@ const createGridChart = (data) => {
   }
 };
 
+watch(symbolSizeFactor, () => {
+  if (simulationChart) {
+    const option = simulationChart.getOption();
+    if (option.series && option.series.length > 0) {
+      option.series[0].symbolSize = function (val) {
+        return Math.sqrt(val[2]) * symbolSizeFactor.value;
+      };
+      simulationChart.setOption(option);
+    }
+  }
+});
+
 const createSimulationChart = (data, index) => {
   if (simulationChart) {
     simulationChart.dispose();
@@ -306,7 +337,7 @@ const createSimulationChart = (data, index) => {
           type: "scatter",
           data: gridData,
           symbolSize: function (val) {
-            return Math.sqrt(val[2]) * 2;
+            return Math.sqrt(val[2]) * symbolSizeFactor.value;
           },
           emphasis: {
             focus: "series",

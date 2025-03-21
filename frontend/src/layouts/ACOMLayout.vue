@@ -10,11 +10,6 @@
         />
         <q-route-tab name="rdf" label="RDF" :to="{ name: 'rdf' }" exact />
         <q-route-tab name="ebsd" label="EBSD" to="/" exact />
-        <q-route-tab
-          name="calibration"
-          label="CALIBRATION"
-          :to="{ name: 'calibration' }"
-        />
         <!-- <q-route-tab name="acom" label="ACOM" to="/ACOM" exact /> -->
         <q-route-tab name="sim" label="SIM" to="/SIM" exact />
       </q-tabs>
