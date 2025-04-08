@@ -6,7 +6,7 @@
 #### Conda
 
 ``` bash
-cd pyglass
+cd backend
 conda env create -f pyglass_backend.yaml
 ```
 ## Install the dependencies for frontend
