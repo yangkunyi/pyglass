@@ -9,9 +9,13 @@
 cd pyglass
 conda env create -f pyglass_backend.yaml
 ```
-#### Quasar
-
-https://quasar.dev/start/quick-start/
+## Install the dependencies for frontend
+```bash
+cd frontend 
+yarn
+# or
+npm install
+```
 
 ### Run
 
